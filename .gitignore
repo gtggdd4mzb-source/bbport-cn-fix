@@ -1,0 +1,5 @@
+﻿bbport-windows/
+user/
+out/
+*.zip
+*.AppImage

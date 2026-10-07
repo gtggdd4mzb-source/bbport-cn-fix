@@ -1,0 +1,174 @@
+diff --git a/scripts/content_profile.py b/scripts/content_profile.py
+index bd8e63a..0a2fab2 100644
+--- a/scripts/content_profile.py
++++ b/scripts/content_profile.py
+@@ -1,4 +1,10 @@
+-"""Prepare explicit offline AppContent metadata; SKU is a probe setting, not a license check."""
++﻿"""Prepare explicit offline AppContent metadata; SKU is a probe setting, not a license check."""
++import sys as _bb_sys
++try:
++    _bb_sys.stdout.reconfigure(encoding='utf-8', errors='replace')
++    _bb_sys.stderr.reconfigure(encoding='utf-8', errors='replace')
++except Exception:
++    pass
+ import argparse
+ import json
+ import struct
+@@ -15,7 +21,7 @@ def prepare(game, out, sku='full'):
+                  user_params=params, mounted_addons=[],boot_attr=0)
+     out.mkdir(parents=True,exist_ok=True)
+     (out/'content.bin').write_bytes(struct.pack('<8s5I',b'BBCONT01',{'full':3,'trial':1}[sku],*params))
+-    (out/'content-profile.json').write_text(json.dumps(profile,indent=2)+'\n')
++    (out/'content-profile.json').write_text(json.dumps(profile,indent=2)+'\n', encoding='utf-8')
+     print(f'AppContent profile: SKU={sku} (probe setting), user params={params}, mounted add-ons=0')
+ 
+ if __name__=='__main__':
+diff --git a/scripts/link_libc.py b/scripts/link_libc.py
+index d1fa779..fd71437 100644
+--- a/scripts/link_libc.py
++++ b/scripts/link_libc.py
+@@ -1,8 +1,14 @@
+-"""Link the user's plaintext libc into a separate, reproducible probe image.
++﻿"""Link the user's plaintext libc into a separate, reproducible probe image.
+ 
+ The original boot.bin remains usable. Symbols are matched by library/module
+ identity, versions and NID, not by dump-local suffix or NID alone.
+ """
++import sys as _bb_sys
++try:
++    _bb_sys.stdout.reconfigure(encoding='utf-8', errors='replace')
++    _bb_sys.stderr.reconfigure(encoding='utf-8', errors='replace')
++except Exception:
++    pass
+ import collections
+ import hashlib
+ import json
+@@ -199,7 +205,7 @@ def link(game, out):
+                   tls_template_bytes=tls['filesz'],tls_memory_bytes=tls['memsz'],
+                   imports=names,relocation_counts=dict(collections.Counter(r[1] for r in libc['relocs'])),
+                   symbol_bindings=[dict(import_name=names[i],address=hex(a),kind=k) for i,a,k in bindings])
+-    (out/'libc-link.json').write_text(json.dumps(report,indent=2)+'\n')
++    (out/'libc-link.json').write_text(json.dumps(report,indent=2)+'\n', encoding='utf-8')
+     print(f'Linked native libc: base={base:#x}, {len(bindings)} fallback exports, TLS={tls["memsz"]} bytes; '
+           f'eboot TLS={main_tls_values[2]} bytes, fs->gs patched={patched}')
+ 
+diff --git a/scripts/link_modules.py b/scripts/link_modules.py
+index b0a76bd..48fdd05 100644
+--- a/scripts/link_modules.py
++++ b/scripts/link_modules.py
+@@ -1,4 +1,4 @@
+-"""Link the eboot with the game's bundled system modules into one probe image.
++﻿"""Link the eboot with the game's bundled system modules into one probe image.
+ 
+ Successor of link_libc.py for several modules (default: libc.prx, then
+ libSceFios2.prx). Every module is placed after the previous one; imports of
+@@ -10,6 +10,12 @@ libSceLibcInternal are served by libc.prx's same-NID exports: the internal
+ library is not shipped with the game and exposes the same functions.
+ Output: out/boot-linked.bin (format BBPROBE5) and out/link.json.
+ """
++import sys as _bb_sys
++try:
++    _bb_sys.stdout.reconfigure(encoding='utf-8', errors='replace')
++    _bb_sys.stderr.reconfigure(encoding='utf-8', errors='replace')
++except Exception:
++    pass
+ import collections
+ import hashlib
+ import json
+@@ -237,7 +243,7 @@ def link(game, out, module_names=DEFAULT_MODULES):
+                   bindings=len(bindings), imports=len(names), fs_loads_patched=fs_patched,
+                   main_tls=dict(zip(('vaddr', 'filesz', 'memsz', 'align'), main_tls_values)),
+                   unresolved_imports=unresolved)
+-    (out / 'link.json').write_text(json.dumps(report, indent=2) + '\n')
++    (out / 'link.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+     summary = ', '.join(f"{t['file']}@{t['base']:#x}" for t in table)
+     print(f'Linked modules: {summary}; {len(bindings)} native bindings, {len(unresolved)} imports left to the host runtime, '
+           f'fs->gs patched={fs_patched}')
+diff --git a/scripts/mods.py b/scripts/mods.py
+index 080c61e..261d0e5 100644
+--- a/scripts/mods.py
++++ b/scripts/mods.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python3
++﻿#!/usr/bin/env python3
+ # SPDX-License-Identifier: GPL-2.0-or-later
+ """Merge loose-file mods through links, preserving the original game and mod files."""
+ import argparse
+@@ -62,7 +62,7 @@ def selected(root, config):
+     available = discover(root)
+     if not config or not Path(config).is_file():
+         return available
+-    settings = json.loads(Path(config).read_text())
++    settings = json.loads(Path(config).read_text(encoding='utf-8'))
+     disabled_names = settings.get('disabled', [])
+     if not isinstance(disabled_names, list) or not all(isinstance(n, str) for n in disabled_names):
+         raise ValueError('Disabled mods must be a list of folder names')
+diff --git a/scripts/patches.py b/scripts/patches.py
+index f26a698..09e2df3 100644
+--- a/scripts/patches.py
++++ b/scripts/patches.py
+@@ -1,9 +1,15 @@
+-"""Compile selected shadPS4/GoldHEN XML patches into out/patches.bin for the loader.
++﻿"""Compile selected shadPS4/GoldHEN XML patches into out/patches.bin for the loader.
+ 
+ Patch addresses are PS4 virtual addresses (eboot base 0x400000); the loader's
+ image places eboot vaddr 0 at image offset 0. Only literal writes are supported
+ (bytes, bytes16/32/64, float32/64, utf8, utf16); pattern ("mask") patches are rejected.
+ """
++import sys as _bb_sys
++try:
++    _bb_sys.stdout.reconfigure(encoding='utf-8', errors='replace')
++    _bb_sys.stderr.reconfigure(encoding='utf-8', errors='replace')
++except Exception:
++    pass
+ import argparse
+ import json
+ import os
+@@ -100,7 +106,7 @@ UI_HEIGHT=0x0235855D-EBOOT_BASE
+ def read_settings(path):
+     settings={}
+     if path.exists():
+-        for line in path.read_text().splitlines():
++        for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
+             key,sep,value=line.partition('=')
+             if sep and not line.startswith('#'): settings[key.strip()]=value.strip()
+     return settings
+@@ -236,7 +242,7 @@ def external_selection(found, config):
+     each file's isEnabled."""
+     settings={}
+     if config and Path(config).is_file():
+-        settings=json.loads(Path(config).read_text())
++        settings=json.loads(Path(config).read_text(encoding='utf-8'))
+     enabled,disabled=set(settings.get('enabled',[])),set(settings.get('disabled',[]))
+     return [(key,path,meta) for key,path,meta in found
+             if key in enabled or (key not in disabled and meta.get('isEnabled','false').lower()=='true')]
+diff --git a/scripts/prepare.py b/scripts/prepare.py
+index b69e7e8..0f4bfd5 100644
+--- a/scripts/prepare.py
++++ b/scripts/prepare.py
+@@ -1,9 +1,15 @@
+-#!/usr/bin/env python3
++﻿#!/usr/bin/env python3
+ """Inspect an already plaintext PS4 SELF; prepare a native entry-point probe.
+ 
+ No decryption, patches to source files, third-party modules or Python dependencies.
+ Format references are linked in README.md. All offsets are checked before use.
+ """
++import sys as _bb_sys
++try:
++    _bb_sys.stdout.reconfigure(encoding='utf-8', errors='replace')
++    _bb_sys.stderr.reconfigure(encoding='utf-8', errors='replace')
++except Exception:
++    pass
+ import argparse
+ import base64
+ import collections
+@@ -237,7 +243,7 @@ def prepare(game, out):
+                   bundled_modules=sorted(p.name for p in (game / 'sce_module').iterdir()),
+                   resources=dict(resources), resource_bytes=total_bytes,
+                   status='Prepared only; execution and Vulkan are tested separately.')
+-    (out / 'analysis.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
++    (out / 'analysis.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+     print(f"{report['sfo'].get('TITLE')} | entry={header[4]:#x} | image={size:,} bytes")
+     print(f"{len(names)} imported symbols; {sum(counts.values()):,} relocations; {len(report['needed'])} required modules")
+     print(f"Unavailable non-loadable metadata headers: {missing}; not a byte-exact ELF reconstruction")
