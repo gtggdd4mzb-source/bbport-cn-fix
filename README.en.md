@@ -7,6 +7,11 @@
 > start on **non-UTF-8 Windows locales** (zh-CN / ja-JP / ko-KR, i.e. ANSI code page 936 / 932 / 949)
 > and run on a **4 GB laptop GPU**.
 
+> [!IMPORTANT]
+> **Upstream status:** the startup crash described in problem 1 is reported upstream and this is
+> the first report of it — [deadinside28/bloodborne_pc#55](https://github.com/deadinside28/bloodborne_pc/issues/55).
+> Until that issue is fixed and merged, use the patch in this repository.
+
 ## Three problems, three fixes
 
 | # | Problem | Symptom | Fix |

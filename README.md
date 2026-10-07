@@ -6,6 +6,11 @@
 > （[deadinside28/bloodborne_pc](https://github.com/deadinside28/bloodborne_pc) 的 Windows 分支）
 > 在 **中文区域设置的 Windows** 上能正常启动，并在 **4GB 显存** 的笔记本显卡上稳定运行。
 
+> [!IMPORTANT]
+> **上游进展：** 问题一的启动崩溃已报告给上游，且是**该 bug 的首次报告** ——
+> [deadinside28/bloodborne_pc#55](https://github.com/deadinside28/bloodborne_pc/issues/55)。
+> 在该 issue 被修复并合并之前，请使用本仓库的补丁。
+
 ## 三个问题与本仓库的做法
 
 | # | 问题 | 症状 | 做法 |
